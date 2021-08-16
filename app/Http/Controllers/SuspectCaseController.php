@@ -1,6 +1,8 @@
 <?php
 
 namespace App\Http\Controllers;
+use App\Events\SuspectCaseCreated;
+use App\Events\SuspectCaseReceptionedEvent;
 use App\Log;
 use App\Rules\UniqueSampleDateByPatient;
 use GuzzleHttp\Client;
@@ -261,40 +263,10 @@ class SuspectCaseController extends Controller
         /* Recepciona en sistema */
         $suspectCase->receptor_id = Auth::id();
         $suspectCase->reception_at = date('Y-m-d H:i:s');
-        if (!$suspectCase->minsal_ws_id) $suspectCase->laboratory_id = Auth::user()->laboratory->id;
+        $suspectCase->laboratory_id = Auth::user()->laboratory->id;
         $suspectCase->save();
 
-        /* Webservice minsal */
-        //####### recepciona en webservice ########
-        if (env('ACTIVA_WS', false) == true) {
-            if ($suspectCase->laboratory_id != null) {
-                if ($suspectCase->laboratory->minsal_ws == true) {
-                    if ($suspectCase->minsal_ws_id) {
-                        // recepciona en minsal
-                        $response = WSMinsal::recepciona_muestra($suspectCase);
-                        if ($response['status'] == 0) {
-                            // Si en pntm esta recepcionado y en monitor no
-                            $responseSampleStatus = WSMinsal::obtiene_estado_muestra($suspectCase);
-                            if ($responseSampleStatus['status'] == 1 && $responseSampleStatus['sample_status'] == 3 && $suspectCase->reception_at != NULL) {
-                                session()->flash('success', 'Se ha recepcionada la muestra: '
-                                    . $suspectCase->id . ' en laboratorio: '
-                                    . Auth::user()->laboratory->name);
-
-                                if ($barcodeReception) return true;
-                                return redirect()->back();
-                            }else{
-                                session()->flash('warning', 'Error al recepcionar muestra ' . $suspectCase->id . ' en MINSAL. ' . $response['msg'] . ".");
-                                $suspectCase->receptor_id = $receptor_id_old;
-                                $suspectCase->reception_at = $reception_at_old;
-                                $suspectCase->save();
-                                if ($barcodeReception) return false;
-                                return redirect()->back()->withInput();
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        event(new SuspectCaseReceptionedEvent($suspectCase));
 
         session()->flash('success', 'Se ha recepcionada la muestra: '
             . $suspectCase->id . ' en laboratorio: '
@@ -648,22 +620,6 @@ class SuspectCaseController extends Controller
             $suspectCase->laboratory_id = Auth::user()->laboratory_id;
         }
 
-
-
-        // ws minsal: previo a guardar, se verifica que la información sea correcta.
-        if (env('ACTIVA_WS', false) == true) {
-            if ($suspectCase->laboratory->minsal_ws == true) {
-                $response = WSMinsal::valida_crea_muestra($request);
-                $ws_minsal_id = $response['msg'];
-                if ($response['status'] == 0) {
-                    session()->flash('warning', 'Error al validar muestra . ' . $response['msg']);
-                    return redirect()->back()->withInput();
-                }
-            }
-        }
-
-
-
         /* Guarda el caso sospecha */
         $patient->suspectCases()->save($suspectCase);
 
@@ -685,38 +641,11 @@ class SuspectCaseController extends Controller
             $rapidtest->save();
         }
 
-
-        /* Webservice minsal */
-        /* Si se crea el caso por alguien con laboratorio asignado */
-        /* La muestra se crea y recepciona inmediatamente en minsal */
-        if (env('ACTIVA_WS', false) == true) {
-            if($suspectCase->laboratory_id != null) {
-                if ($suspectCase->laboratory->minsal_ws == true) {
-                    //####### crea muestra en webservice ########
-                    $response = WSMinsal::crea_muestra_v2($suspectCase);
-                    $ws_minsal_id = $response['msg'];
-                    if ($response['status'] == 0) {
-                        session()->flash('warninig', 'Error al subir muestra a MINSAL. ' . $response['msg']);
-                        $suspectCase->forceDelete();
-                        return redirect()->back()->withInput();
-                    }
-
-                    $suspectCase->minsal_ws_id = $ws_minsal_id;
-                    $suspectCase->save();
-
-                    session()->flash('success', 'Se ha creado el caso número: <h3>'. $suspectCase->id. ' <a href="' . route('lab.suspect_cases.notificationFormSmall',$suspectCase)
-                        . '">Imprimir Formulario</a></h3><br />Se ha creado muestra en PNTM. Id generado: ' .$ws_minsal_id);
-
-                    return redirect()->back();
-                }
-            }
-        }
-
-
-
         session()->flash('success', 'Se ha creado el caso número: <h3>'
             . $suspectCase->id. ' <a href="' . route('lab.suspect_cases.notificationFormSmall',$suspectCase)
             . '">Imprimir Formulario</a></h3>');
+
+        event(new SuspectCaseCreated($suspectCase));
 
         return redirect()->back();
     }

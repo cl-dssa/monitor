@@ -439,6 +439,9 @@
                                 <a class="nav-link" href="{{ route('parameters.index') }}">
                                     <i class="fas fa-cog fa-fw"></i> Configuracion
                                 </a>
+                                <a class="nav-link" href="{{route('horizon.index')}}">
+                                    <i class="fas fa-cog fa-fw">Colas</i>
+                                </a>
                                 @endcan
 
                                 <a class="dropdown-item" target="_blank" href="https://www.youtube.com/channel/UCynVYUM4qEu9eGPvM_3Z-WA">

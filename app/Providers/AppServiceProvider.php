@@ -2,6 +2,8 @@
 
 namespace App\Providers;
 
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
 
@@ -35,6 +37,11 @@ class AppServiceProvider extends ServiceProvider
             $parts = str_getcsv($expression);
             $parts[1] = (isset($parts[1]))?$parts[1]:$default;
             return '<?php if(' . $parts[0] . '){ echo e(' . $parts[0] . '->format(' . $parts[1] . ')); } ?>';
+        });
+
+        Db::listen(function($query){
+            Log::debug("Query: $query->sql");
+            Log::debug("Parameters:", $query->bindings);
         });
 
     }
