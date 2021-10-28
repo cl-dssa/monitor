@@ -78,6 +78,8 @@
                             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                                 @can('SuspectCase: admission')
                                 <a class="dropdown-item" href="{{ route('lab.suspect_cases.admission') }}">Agregar nuevo caso</a>
+
+                                <a class="dropdown-item" href="{{ route('lab.suspect_cases.search') }}">Buscar por ID</a>
                                 @endcan
 
                                 @can('SuspectCase: reception')
@@ -171,12 +173,16 @@
                                 <a class="dropdown-item" href="{{ route('lab.inmuno_tests.index') }}">Inmunoglobulinas</a>
                                 @endcan
 
-                                <a class="dropdown-item" href="{{ route('lab.suspect_cases.reports.minsal_ws') }}">WS Minsal</a>
+                                <a class="dropdown-item" href="{{ route('lab.suspect_cases.reports.minsal_ws') }}">WS Minsal pendientes</a>
+
+                                @can('SuspectCase: sequencing')
+                                <a class="dropdown-item" href="{{ route('sequencing.index') }}">Secuenciación</a>
+                                @endcan
 
                                 <div class="dropdown-divider"></div>
 
                                 @can('SuspectCase: bulk load')
-                                <a class="dropdown-item" href="{{ route('lab.bulk_load.index') }}">Carga Masiva Casos</a>
+                                <a class="dropdown-item" href="{{ route('lab.bulk_load.index') }}">Carga Masiva</a>
                                 @endcan
 
                                 @can('SuspectCase: import results')
@@ -186,6 +192,8 @@
                                 @can('SuspectCase: bulk load PNTM')
                                     <a class="dropdown-item" href="{{ route('lab.bulk_load_from_pntm.index') }}">Carga Masiva Resultados PNTM</a>
                                 @endcan
+
+                                
 
                             </div>
 
