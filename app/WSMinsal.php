@@ -16,6 +16,7 @@ class WSMinsal extends Model
 
     public static function valida_crea_muestra($request)
     {
+        //dd($request);
         $response = [];
         $client = new Client();
 
@@ -50,6 +51,36 @@ class WSMinsal extends Model
             $run_medic = $request->run_medic_s_dv . "-" . $request->run_medic_dv;
         }
 
+        switch ($request->sample_type) {
+            case 'TÓRULAS NASOFARÍNGEAS':
+                $sampleType = 'Tórulas Nasofaríngeas';
+                break;
+            case 'ESPUTO':
+                $sampleType = 'Esputo';
+                break;
+            case 'ASPIRADO NASOFARÍNGEO':
+                $sampleType ='Aspirado Nasofaríngeo';
+                break;
+            case 'LAVADO BRONCOALVEOLAR':
+                $sampleType ='Lavado Broncoalveolar';
+                break;
+            case 'ASPIRADO TRAQUEAL':
+                $sampleType ='Aspirado Traqueal';
+                break;
+            case 'MUESTRA SANGUÍNEA':
+                $sampleType ='Muestra sanguínea';
+                break;
+            case 'TEJIDO PULMONAR':
+                $sampleType ='Tejido pulmonar';
+                break;
+            case 'SALIVA':
+                $sampleType ='Saliva';
+                break;
+            case 'OTRO':
+                $sampleType ='Otro';
+                break;
+        }
+
         $array = array(
             'raw' => array(
                 'codigo_muestra_cliente' => $codigo_muestra_cliente + 1,
@@ -72,8 +103,12 @@ class WSMinsal extends Model
                 'paciente_prevision' => 'FONASA', //fijo por el momento
                 'fecha_muestra' => date('Y-m-d H:i:s'),
                 'tecnica_muestra' => 'RT-PCR', //fijo
-                'tipo_muestra' => $request->sample_type,
-                'busqueda_activa' => ($request->case_type == 'Busqueda activa') ? 'true' : 'false'
+                //'tipo_muestra' => $request->sample_type,
+                'tipo_muestra' => $sampleType,
+                'busqueda_activa' => ($request->case_type == 'Busqueda activa') ? 'true' : 'false',
+                'id_laboratorio' => $request->id_openagora,
+                'sin_orden_medica' => !$request->medical_order,
+                'epivigila' => $request->epivigila
             )
         );
 
@@ -171,7 +206,6 @@ class WSMinsal extends Model
                 'tipo_muestra' => $suspectCase->sample_type,
                 'busqueda_activa' => ($suspectCase->case_type == 'Busqueda activa') ? 'true' : 'false',
                 'id_laboratorio' => $suspectCase->laboratory->id_openagora
-
             )
         );
 
@@ -323,7 +357,7 @@ class WSMinsal extends Model
         $minsal_ws_id = $suspectCase->minsal_ws_id;
         $response = [];
         $client = new Client();
-        $array = array('raw' => array('id_muestra' => $minsal_ws_id));
+        $array = array('raw' => array('id_muestra' => $minsal_ws_id, 'fecha_recepcion_laboratorio' => now()));
 
         try {
             $response = $client->request('POST', env('WS_RECEPCIONA_MUESTRA'), [
@@ -365,7 +399,7 @@ class WSMinsal extends Model
                         'multipart' => [
                             [
                                 'name'     => 'parametros',
-                                'contents' => '{"id_muestra":"' . $suspectCase->minsal_ws_id .'","resultado":"' . $resultado .'"}'
+                                'contents' => '{"id_muestra":"' . $suspectCase->minsal_ws_id .'","resultado":"' . $resultado .'", "fecha_hora_resultado_laboratorio":"' . $suspectCase->pcr_sars_cov_2_at . '"}'
                             ]
                         ],
                         'headers'  => [ 'ACCESSKEY' => $suspectCase->laboratory->token_ws]
@@ -380,7 +414,7 @@ class WSMinsal extends Model
                             ],
                             [
                                 'name'     => 'parametros',
-                                'contents' => '{"id_muestra":"' . $suspectCase->minsal_ws_id .'","resultado":"' . $resultado .'"}'
+                                'contents' => '{"id_muestra":"' . $suspectCase->minsal_ws_id .'","resultado":"' . $resultado .'", "fecha_hora_resultado_laboratorio":"' . $suspectCase->pcr_sars_cov_2_at . '"}'
                             ]
                         ],
                         'headers'  => [ 'ACCESSKEY' => $suspectCase->laboratory->token_ws]
@@ -397,7 +431,7 @@ class WSMinsal extends Model
                         ],
                         [
                             'name'     => 'parametros',
-                            'contents' => '{"id_muestra":"' . $suspectCase->minsal_ws_id .'","resultado":"' . $resultado .'"}'
+                            'contents' => '{"id_muestra":"' . $suspectCase->minsal_ws_id .'","resultado":"' . $resultado .'", "fecha_hora_resultado_laboratorio":"' . $suspectCase->pcr_sars_cov_2_at . '"}'
                         ]
                     ],
                     'headers'  => [ 'ACCESSKEY' => $suspectCase->laboratory->token_ws]
@@ -459,7 +493,7 @@ class WSMinsal extends Model
             ]);
 
             $array = json_decode($response->getBody()->getContents(), true);
-            $response = ['status' => 1, 'sample_status' => $array[0]['estado_muestra']];
+            $response = ['status' => 1, 'sample_status' => $array[0]['estado_muestra'], 'sample_result' => $array[0]['resultado']];
 
         }catch (RequestException $e){
             $response = ['status' => 0, 'msg' => $e->getMessage()];

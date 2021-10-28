@@ -19,11 +19,11 @@
             <td>{{ $audit->url }}</td>
             <td>{{ $audit->auditable_type }}</td>
             <td>{{ $audit->created_at }}</td>
-            <td>{{ $audit->user->name }}</td>
+            <td>{{ ($audit->user) ? $audit->user->name : 'Sistema' }}</td>
             <td>{{ $audit->event }}</td>
             <td>
             @foreach($audit->getModified() as $attribute => $modified)
-                <strong>{{ $attribute }}</strong> :  {{ isset($modified['old']) ? $modified['old'] : '' }}  => {{ $modified['new'] }} <br>
+                <strong>{{ $attribute?? '' }}</strong> :  {{ isset($modified['old']) ? $modified['old'] : '' }}  => {{ $modified['new'] ?? '' }} <br>
             @endforeach
             </td>
         </tr>
