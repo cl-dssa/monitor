@@ -42,6 +42,10 @@ services:
       XDEBUG_CONFIG: client_host=${MYIP:-host.docker.internal}
       ORDERBY: sample_at
       MINSAL_DATE_INI: "2020-08-26 19:00"
+      SESSION_DRIVER: redis
+      SESSION_CONNECTION: session
+      QUEUE_CONNECTION: redis
+      REDIS_HOST: redis
 
   horizon:
     image: monitor
@@ -67,11 +71,6 @@ services:
       REDIS_HOST: redis
       ORDERBY: sample_at
       MINSAL_DATE_INI: "2020-08-26 19:00"
-      DB_HOST: database
-      DB_DATABASE: BD_MONITOR
-      DB_USERNAME: monitor
-      DB_PASSWORD: development
-      APP_KEY: base64:499myTpr8iJvYewvoqQfYmobmzUU1DHx7XPx7qF3mnk=
 
   redis:
     image: redis:6-alpine

@@ -167,7 +167,7 @@
   <component name="PhpInterpretersPhpInfoCache">
     <phpInfoCache>
       <interpreter name="php">
-        <phpinfo binary_type="PHP" php_cli="/usr/local/bin/php" path_separator=":" version="7.4.19">
+        <phpinfo binary_type="PHP" php_cli="/usr/local/bin/php" path_separator=":" version="7.4.24">
           <additional_php_ini>/usr/local/etc/php/conf.d/docker-php-ext-gd.ini, /usr/local/etc/php/conf.d/docker-php-ext-pcntl.ini, /usr/local/etc/php/conf.d/docker-php-ext-pdo_mysql.ini, /usr/local/etc/php/conf.d/docker-php-ext-redis.ini, /usr/local/etc/php/conf.d/docker-php-ext-sodium.ini, /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini, /usr/local/etc/php/conf.d/docker-php-ext-zip.ini, /usr/local/etc/php/conf.d/xdebug.ini</additional_php_ini>
           <configuration_file>/usr/local/etc/php/php.ini</configuration_file>
           <configuration_options>
