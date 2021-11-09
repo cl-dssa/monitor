@@ -16,6 +16,15 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+Route::get('/secuenciacion', function () {
+    return view('secuenciacion');
+});
+Route::get('/secuenciaciondata', function () {
+    return view('secuenciaciondata');
+});
+Route::get('/adddata', function () {
+    return view('adddata');
+});
 
 Route::get('test/fonasa', 'TestController@fonasa');
 
@@ -197,9 +206,9 @@ Route::prefix('lab')->name('lab.')->group(function () {
         Route::get('/index/{laboratory?}','SuspectCaseController@index')->name('index')->middleware('auth','can:SuspectCase: list');
 
         //DIALISIS
-        Route::get('/dialysis/covid/{establishment?}','DialysisPatientController@covid')->name('dialysis.covid');
-        Route::get('/dialysis/{establishment?}','DialysisPatientController@index')->name('dialysis.index');
-        Route::post('/dialysis','DialysisPatientController@store')->name('dialysis.store');
+        Route::get('/dialysis/covid/{establishment?}','DialysisPatientController@covid')->name('dialysis.covid')->middleware('auth');
+        Route::get('/dialysis/{establishment?}','DialysisPatientController@index')->name('dialysis.index')->middleware('auth');
+        Route::post('/dialysis','DialysisPatientController@store')->name('dialysis.store')->middleware('auth');
 
 
 
@@ -214,6 +223,7 @@ Route::prefix('lab')->name('lab.')->group(function () {
         //Route::get('/create','SuspectCaseController@create')->name('create')->middleware('auth','can:SuspectCase: create');
         //Route::post('/','SuspectCaseController@store')->name('store')->middleware('auth','can:SuspectCase: create');
         Route::get('/admission','SuspectCaseController@admission')->name('admission')->middleware('auth','can:SuspectCase: admission');
+        Route::get('/search','SuspectCaseController@search')->name('search')->middleware('auth','can:SuspectCase: admission');
         Route::post('/admission','SuspectCaseController@storeAdmission')->name('store_admission')->middleware('auth','can:SuspectCase: admission');
         Route::get('/{suspect_case}/edit','SuspectCaseController@edit')->name('edit')->middleware('auth','can:SuspectCase: edit');
         Route::put('/{suspect_case}','SuspectCaseController@update')->name('update')->middleware('auth','can:SuspectCase: edit');
@@ -240,7 +250,7 @@ Route::prefix('lab')->name('lab.')->group(function () {
             Route::get('/minsal/{laboratory}','SuspectCaseReportController@report_minsal')->name('minsal')->middleware('auth');
             Route::get('/reception_report/{laboratory}','SuspectCaseReportController@reception_report')->name('reception_report')->middleware('auth');
             // Route::get('/minsal_ws','SuspectCaseReportController@report_minsal_ws')->name('minsal_ws')->middleware('auth');
-            Route::match(['get','post'],'/minsal_ws','SuspectCaseReportController@report_minsal_ws')->name('minsal_ws');
+            Route::match(['get','post'],'/minsal_ws','SuspectCaseReportController@report_minsal_ws')->name('minsal_ws')->middleware('auth');
             Route::get('/seremi/{laboratory}','SuspectCaseReportController@report_seremi')->name('seremi')->middleware('auth');
             Route::get('/positivesByDateRange','SuspectCaseReportController@positivesByDateRange')->name('positivesByDateRange')->middleware('auth');
             Route::get('/positives_own','SuspectCaseReportController@positivesOwn')->name('positives_own')->middleware('auth');
@@ -463,6 +473,19 @@ Route::prefix('sanitary_residences')->name('sanitary_residences.')->middleware('
 
 
 });
+
+Route::prefix('sequencing')->name('sequencing.')->middleware('auth')->group(function () {
+    Route::get('/', 'SequencingCriteriaController@index')->name('index');
+    Route::get('/indexsend', 'SequencingCriteriaController@indexsend')->name('indexsend');
+    Route::get('/create/{suspect_case}','SequencingCriteriaController@create')->name('create');
+    Route::get('/{sequencingCriteria}/edit','SequencingCriteriaController@edit')->name('edit');
+    Route::put('/{sequencingCriteria}', 'SequencingCriteriaController@update')->name('update');
+    Route::put('/{sequencingCriteria}/send', 'SequencingCriteriaController@send')->name('send');
+    Route::delete('/{sequencingCriteria}', 'SequencingCriteriaController@destroy')->name('destroy');
+
+
+});
+
 
 Route::prefix('pending_patient')->name('pending_patient.')->middleware('auth')->group(function () {
    Route::get('/create', 'PendingPatientController@create')->name('create');

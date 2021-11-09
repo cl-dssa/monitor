@@ -304,6 +304,16 @@ class PermissionSeeder extends Seeder
             'name' => 'SuspectCase: bulk load PNTM',
             'description' => 'Carga masiva desde reporte PNTM'
         ]);
+
+        $permission = Permission::create([
+            'name' => 'SuspectCase: sequencing',
+            'description' => 'Módulo de secuenciación'
+        ]);
+
+        $permission = Permission::create([
+            'name' => 'SuspectCase: sequencing ISP',
+            'description' => 'Añade resultado ISP y Sospecha Local'
+        ]);
 /*
         $users = User::all();
         foreach($users as $user) {

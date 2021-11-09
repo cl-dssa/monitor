@@ -44,6 +44,7 @@ use App\Exports\SeremiSuspectCasesExport;
 use App\Imports\PatientImport;
 use App\Imports\DemographicImport;
 use App\Imports\SuspectCaseImport;
+use App\SequencingCriteria;
 
 use App\WSMinsal;
 use MongoDB\Driver\Session;
@@ -229,6 +230,15 @@ class SuspectCaseController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+
+    public function search()
+    {
+        return view('lab.suspect_cases.search');
+
+    }
+
+
+
     public function admission()
     {
         if(!Auth::user()->laboratory_id){
@@ -651,20 +661,21 @@ class SuspectCaseController extends Controller
 
 
         // ws minsal: previo a guardar, se verifica que la información sea correcta.
-        if (env('ACTIVA_WS', false) == true) {
-            if ($suspectCase->laboratory->minsal_ws == true) {
-                $response = WSMinsal::valida_crea_muestra($request);
-                $ws_minsal_id = $response['msg'];
-                if ($response['status'] == 0) {
-                    session()->flash('warning', 'Error al validar muestra . ' . $response['msg']);
-                    return redirect()->back()->withInput();
-                }
-            }
-        }
+        //  if (env('ACTIVA_WS', false) == true) {
+        //      if ($suspectCase->laboratory->minsal_ws == true) {
+        //          $response = WSMinsal::valida_crea_muestra($request);
+        //          $ws_minsal_id = $response['msg'];
+        //          if ($response['status'] == 0) {
+        //              session()->flash('warning', 'Error al validar muestra . ' . $response['msg']);
+        //              return redirect()->back()->withInput();
+        //          }
+        //      }
+        //  }
 
 
 
         /* Guarda el caso sospecha */
+
         $patient->suspectCases()->save($suspectCase);
 
         if($patient->demographic) {
@@ -782,6 +793,7 @@ class SuspectCaseController extends Controller
         }
 
 
+
         if(Auth::user()->can('SuspectCase: reception')){
             if ($request->laboratory_id == null) {
             $suspectCase->receptor_id = null;
@@ -870,7 +882,15 @@ class SuspectCaseController extends Controller
                                             $this->suspectCaseBackToPending($suspectCase);
                                             return redirect()->back()->withInput();
                                         }
-                                }else{
+                                //Si en PNTM está con resultado y no es el mismo que se intenta cargar, se devuelve a pending
+                                }elseif ($responseSampleStatus['status'] == 1 && $responseSampleStatus['sample_status'] == 4 && $suspectCase->pcr_sars_cov_2 != 'pending'){
+                                    if ($responseSampleStatus['sample_result'] != $suspectCase->covid19) {
+                                        session()->flash('warning', 'Ya existe muestra en PNTM y el resultado es diferente al especificado ' . $suspectCase->id . ' en MINSAL. ' . $response['msg']);
+                                        $this->suspectCaseBackToPending($suspectCase);
+                                        return redirect()->back()->withInput();
+                                    }
+                                }
+                                else{
                                     session()->flash('warning', 'Error al subir resultado de muestra ' . $suspectCase->id . ' en MINSAL. ' . $response['msg']);
                                     $this->suspectCaseBackToPending($suspectCase);
                                     return redirect()->back()->withInput();
@@ -976,6 +996,14 @@ class SuspectCaseController extends Controller
 
                 }
             }
+        }
+
+
+        if ($request->input('candidate_for_sq') == 1) {
+            $sequencingCriteria = new SequencingCriteria();
+            $sequencingCriteria->suspect_case_id = $suspectCase->id;
+            $sequencingCriteria->save();
+
         }
 
         return redirect($request->input('referer'));
@@ -1777,7 +1805,8 @@ class SuspectCaseController extends Controller
                 $fecha_resultado_carbon = Carbon::instance(\PhpOffice\PhpSpreadsheet\Shared\Date::excelToDateTimeObject($patient['Fecha Resultado']));
                 if(!$fecha_resultado_carbon->betweenIncluded($startDate, $endDate)){
                     session()->flash('warning', "La fecha de resultado {$fecha_resultado_carbon->format('d-m-Y')} debe estar entre {$startDate->format('d-m-Y')} y {$endDate->format('d-m-Y')}.");
-                    return view('lab.bulk_load.index');
+                    return redirect()->route('lab.bulk_load.index');
+                    // return view('lab.bulk_load.index');
                 }
             }
 
@@ -1857,7 +1886,7 @@ class SuspectCaseController extends Controller
                   }
                 }
 
-                if($patient_create){
+                if($patient_create && $patient['Laboratorio'] != null){
                     $new_suspect_case = new SuspectCase();
 
                     $new_suspect_case->laboratory_id      = $patient['Laboratorio'];
