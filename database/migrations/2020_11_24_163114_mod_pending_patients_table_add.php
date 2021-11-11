@@ -37,6 +37,7 @@ class ModPendingPatientsTableAdd extends Migration
     public function down()
     {
         Schema::table('pending_patients', function (Blueprint $table){
+            $table->dropForeign(['appointment_specialty']);
             $table->dropColumn('appointment_specialty');
             $table->dropColumn('appointment_location');
         });

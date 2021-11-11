@@ -18,10 +18,9 @@ class CreateRapidTests extends Migration
             $table->string('type');
             $table->datetime('register_at')->nullable();
             $table->string('value_test');
-            $table->foreignId('patient_id');            
+            $table->foreignId('patient_id');
             $table->timestamps();
             $table->softDeletes();
-
             $table->foreign('patient_id')->references('id')->on('patients');
         });
     }
@@ -33,6 +32,6 @@ class CreateRapidTests extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('rapid_test');
+        Schema::dropIfExists('rapid_tests');
     }
 }
