@@ -38,7 +38,7 @@ return [
         'stack' => [
             'driver' => 'stack',
             'name' => 'laravel-local',
-            'channels' => ['single'],
+            'channels' => ['console'],
             'ignore_exceptions' => false,
         ],
 
@@ -106,6 +106,15 @@ return [
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
+
+        'console' => [
+            'driver' => 'monolog',
+            'handler' => StreamHandler::class,
+            'level' => 'debug',
+            'with' => [
+                'stream' => 'php://stdout'
+            ]
+        ]
     ],
 
 ];
