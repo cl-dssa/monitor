@@ -106,6 +106,17 @@ return [
         'emergency' => [
             'path' => storage_path('logs/laravel.log'),
         ],
+
+        'incoming_hl7' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/incoming_hl7.log'),
+        ],
+
+        'suspect_cases_json' => [
+            'driver' => 'single',
+            'path' => storage_path('logs/suspect_cases_json.log'),
+        ],
+
     ],
 
 ];

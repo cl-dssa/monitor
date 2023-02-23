@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 
@@ -78,6 +79,8 @@
                             <div class="dropdown-menu" aria-labelledby="navbarDropdown">
                                 @can('SuspectCase: admission')
                                 <a class="dropdown-item" href="{{ route('lab.suspect_cases.admission') }}">Agregar nuevo caso</a>
+
+                                <a class="dropdown-item" href="{{ route('lab.suspect_cases.search') }}">Buscar por ID</a>
                                 @endcan
 
                                 @can('SuspectCase: reception')
@@ -171,12 +174,16 @@
                                 <a class="dropdown-item" href="{{ route('lab.inmuno_tests.index') }}">Inmunoglobulinas</a>
                                 @endcan
 
-                                <a class="dropdown-item" href="{{ route('lab.suspect_cases.reports.minsal_ws') }}">WS Minsal</a>
+                                <a class="dropdown-item" href="{{ route('lab.suspect_cases.reports.minsal_ws') }}">WS Minsal pendientes</a>
+
+                                @can('SuspectCase: sequencing')
+                                <a class="dropdown-item" href="{{ route('sequencing.index') }}">Secuenciación</a>
+                                @endcan
 
                                 <div class="dropdown-divider"></div>
 
                                 @can('SuspectCase: bulk load')
-                                <a class="dropdown-item" href="{{ route('lab.bulk_load.index') }}">Carga Masiva Casos</a>
+                                <a class="dropdown-item" href="{{ route('lab.bulk_load.index') }}">Carga Masiva</a>
                                 @endcan
 
                                 @can('SuspectCase: import results')
@@ -187,12 +194,21 @@
                                     <a class="dropdown-item" href="{{ route('lab.bulk_load_from_pntm.index') }}">Carga Masiva Resultados PNTM</a>
                                 @endcan
 
+                                @can('SuspectCase: bulk load PNTM')
+                                    <a class="dropdown-item" href="{{ route('lab.bulk_load_from_pntm.index.no.creation') }}">Carga Masiva Resultados PNTM HETG a Bluelab</a>
+                                @endcan
+
+                                @can('SuspectCase: edit')
+                                  <a class="dropdown-item" href="{{ route('lab.suspect_cases.reports.integration_hetg_monitor_pendings') }}">Integración HETG - Esmeralda - Pendientes</a>
+                                @endcan
+
+
                             </div>
 
                         </li>
                         @endcan
 
-
+                        {{--
                         @canany(['Patient: georeferencing', 'Geo: communes', 'Geo: region', 'Geo: establishments'] )
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -212,7 +228,9 @@
                             </div>
                         </li>
                         @endcan
+                        --}}
 
+                        {{--
                         @can('Epp: list')
                         <li class="nav-item">
                             <a class="nav-link" href="{{ route('epp.index') }}">
@@ -221,7 +239,7 @@
                             </a>
                         </li>
                         @endcan
-
+                        --}}
 
 
                         @canany(['SanitaryResidence: user', 'SanitaryResidence: admin' ,'SanitaryResidence: admission', 'Report: residences','SanitaryResidence: view'] )
@@ -278,18 +296,17 @@
                                 <a class="dropdown-item" href="{{ route('sanitary_residences.admission.inbox') }}">Bandeja SEREMI</a>
                                 @endcan
 
+
+                                @canany(['Patient: fusion','Developer'])
+                                <div class="dropdown-divider"></div>
+                                <a class="dropdown-item" href="{{ route('patients.fusion.create') }}">Fusion de Pacientes</a>
+                                @endcan
+
                             </div>
                         </li>
                         @endcan
 
-                        @can('Basket:')
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ route('help_basket.index')  }}">
-                                <i class="fas fa-shopping-basket"></i>
-                                Canasta
-                            </a>
-                        </li>
-                        @endcan
+                        
 
 
                         @canany(['Report: positives',
@@ -306,7 +323,8 @@
                         'Report: user performance',
                         'Report: more than two days',
                         'Report: suspect cases by commune',
-                        'Report: positive average by commune'
+                        'Report: positive average by commune',
+                        'Report: cases with barcodes'
                         ])
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -435,11 +453,11 @@
                             </a>
 
                             <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
-                                @can('Admin')
+                                @canany(['Admin','SuspectCase: origin'])                                
                                 <a class="nav-link" href="{{ route('parameters.index') }}">
                                     <i class="fas fa-cog fa-fw"></i> Configuracion
                                 </a>
-                                @endcan
+                                @endcanany
 
                                 <a class="dropdown-item" target="_blank" href="https://www.youtube.com/channel/UCynVYUM4qEu9eGPvM_3Z-WA">
                                     Tutoriales

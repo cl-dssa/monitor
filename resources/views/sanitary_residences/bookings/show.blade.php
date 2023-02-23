@@ -121,6 +121,42 @@
 </div>
 
 <hr>
+<h4 class="mt-4">Test Rápido</h4>
+
+<div class="table-responsive-sm">
+                <table class="table table-sm table-bordered small mb-4 mt-4">
+                    <thead>
+                    <tr>
+                        <th>Id</th>
+                        <th>Tipo de Examen</th>
+                        <th>Fecha Examen</th>
+                        <th>Valor</th>
+                        <th>Fecha de Digitación en Sistema</th>
+                        <th>Epivigila</th>
+                        <th>Observación</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    @foreach($booking->patient->rapidTests as $rapidTest)
+                        <tr>
+                            <td>
+                                <a href="#">
+                                    {{ $rapidTest->id }}
+                                </a>
+                            </td>
+                            <td>{{ ($rapidTest->type) }}</td>
+                            <td>{{ $rapidTest->register_at }}</td>
+                            <td>{{ ($rapidTest->value_test) }}</td>
+                            <td>{{ $rapidTest->created_at }}</td>
+                            <td>{{ $rapidTest->epivigila }}</td>
+                            <td>{{ $rapidTest->observation??'' }}</td>
+                        </tr>
+                    @endforeach
+                    </tbody>
+                </table>
+              </div>
+
+<hr>
 
 
 <form method="POST" class="form-horizontal" action="{{ route('sanitary_residences.bookings.update', $booking) }}">
@@ -196,6 +232,7 @@
                 <option value="">Seleccione Condición</option>
                 <option value="PCR +" {{ ($booking->entry_criteria == 'PCR +')?'selected':'' }}>PCR +</option>
                 <option value="Otro" {{ ($booking->entry_criteria == 'Otro')?'selected':'' }}>Otro</option>
+                <option value="Antigeno +" {{ ($booking->entry_criteria == 'Antigeno +')?'selected':'' }}>Antigeno +</option>
                 <option value="Contacto Estrecho" {{ ($booking->entry_criteria == 'Contacto Estrecho')?'selected':'' }} >Contacto Estrecho</option>
                 <option value="Sospecha" {{ ($booking->entry_criteria == 'Sospecha')?'selected':'' }} >Sospecha</option>
                 <option value="Probable" {{ ($booking->entry_criteria == 'Probable')?'selected':'' }} >Probable</option>
@@ -205,6 +242,7 @@
                 <option value="Migrante Sospecha" {{ ($booking->entry_criteria == 'Migrante Sospecha')?'selected':'' }} >Migrante Sospecha</option>
                 <option value="Migrante Caso Probable" {{ ($booking->entry_criteria == 'Migrante Caso Probable')?'selected':'' }} >Migrante Caso Probable</option>
                 <option value="Migrante Otro" {{ ($booking->entry_criteria == 'Migrante Otro')?'selected':'' }} >Migrante Otro</option>
+                <!-- <option value="Persona en Alerta Covid 19" {{ ($booking->entry_criteria == 'Persona en Alerta Covid 19')?'selected':'' }} >Persona en Alerta Covid 19</option> -->
             </select>
         </fieldset>
 

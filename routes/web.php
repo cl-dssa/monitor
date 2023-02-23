@@ -16,6 +16,15 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+Route::get('/secuenciacion', function () {
+    return view('secuenciacion');
+});
+Route::get('/secuenciaciondata', function () {
+    return view('secuenciaciondata');
+});
+Route::get('/adddata', function () {
+    return view('adddata');
+});
 
 Route::get('test/fonasa', 'TestController@fonasa');
 
@@ -48,6 +57,8 @@ Route::prefix('users')->name('users.')->middleware('auth')->group(function () {
     Route::get('/{user}/edit', 'UserController@edit')->name('edit')->middleware('can:Admin');
     Route::put('/{user}', 'UserController@update')->name('update')->middleware('can:Admin');
     Route::delete('/{user}', 'UserController@destroy')->name('destroy')->middleware('can:Admin');
+    Route::post('/{user}/update-active', 'UserController@updateActive')->name('update-active')->middleware('can:Admin');
+    Route::get('/last-access', 'UserController@lastAccess')->name('last-access')->middleware('can:Admin');
 });
 
 /*
@@ -68,7 +79,7 @@ Route::prefix('patients')->name('patients.')->middleware('auth')->group(function
     Route::get('positives', 'PatientController@positives')->name('positives')->middleware('can:Patient: list');
     Route::get('/create', 'PatientController@create')->name('create')->middleware('can:Patient: create');
     Route::post('/', 'PatientController@store')->name('store')->middleware('can:Patient: create');
-    Route::get('/{patient}/edit', 'PatientController@edit')->name('edit')->middleware('can:Patient: edit');
+    Route::get('/{patient}/edit', 'PatientController@edit')->name('edit')->middleware('auth');
     Route::put('/{patient}', 'PatientController@update')->name('update')->middleware('can:Patient: edit');
     Route::delete('/{patient}', 'PatientController@destroy')->name('destroy')->middleware('can:Patient: delete');
     Route::get('/export', 'PatientController@export')->name('export');
@@ -83,6 +94,12 @@ Route::prefix('patients')->name('patients.')->middleware('auth')->group(function
         Route::get('/{contact_patient}/edit', 'ContactPatientController@edit')->name('edit')->middleware('auth');
         Route::put('/{contact_patient}', 'ContactPatientController@update')->name('update')->middleware('auth');
         Route::get('delete/{contact_patient}','ContactPatientController@destroy')->name('destroy')->middleware('auth');;
+    });
+
+    Route::prefix('fusion')->name('fusion.')->middleware('can:Patient: fusion')->group(function () {
+        Route::get('/', 'PatientController@createFusion')->name('create');
+        Route::post('/show', 'PatientController@showFusion')->name('show');
+        Route::post('/', 'PatientController@doFusion')->name('do');
     });
 
     Route::prefix('tracings')->name('tracings.')->middleware('auth')->group(function () {
@@ -139,22 +156,6 @@ Route::prefix('patients')->name('patients.')->middleware('auth')->group(function
 
 Route::resource('epp','EppController')->middleware('auth');
 
-
-Route::prefix('help_basket')->name('help_basket.')->middleware('auth')->group(function () {
-    Route::get('/', 'HelpBasketController@index')->name('index');
-    Route::get('/create', 'HelpBasketController@create')->name('create');
-    Route::get('/georeferencing', 'HelpBasketController@georeferencing')->name('georeferencing');
-    Route::post('/store', 'HelpBasketController@store')->name('store');
-    Route::get('/{helpBasket}/edit', 'HelpBasketController@edit')->name('edit');
-    Route::put('{helpBasket}', 'HelpBasketController@update')->name('update');
-    Route::delete('/{helpBasket}', 'HelpBasketController@Destroy')->name('destroy');
-    Route::get('/download/{storage}/{file?}', 'HelpBasketController@download')->name('download');
-    Route::get('/excel','HelpBasketController@excel')->name('excel');
-
-});
-
-
-
 Route::prefix('lab')->name('lab.')->group(function () {
     //Route::get('/', 'LaboratoryController@index')->name('index');
     //Route::get('/create', 'LaboratoryController@create')->name('create');
@@ -184,6 +185,7 @@ Route::prefix('lab')->name('lab.')->group(function () {
     Route::prefix('suspect_cases')->name('suspect_cases.')->group(function () {
         Route::get('reception_inbox','SuspectCaseController@reception_inbox')->name('reception_inbox')->middleware('auth','can:SuspectCase: reception');
         Route::post('reception/{suspect_case}','SuspectCaseController@reception')->name('reception')->middleware('auth','can:SuspectCase: reception');
+        Route::post('send-to-yani/{suspect_case}','WsHetgRequestController@sendToYani')->name('send_to_yani')->middleware('auth','can:SuspectCase: reception');
         Route::post('derive','SuspectCaseController@derive')->name('derive')->middleware('auth');
         Route::post('mass_reception','SuspectCaseController@massReception')->name('mass_reception')->middleware('auth');
 
@@ -197,9 +199,9 @@ Route::prefix('lab')->name('lab.')->group(function () {
         Route::get('/index/{laboratory?}','SuspectCaseController@index')->name('index')->middleware('auth','can:SuspectCase: list');
 
         //DIALISIS
-        Route::get('/dialysis/covid/{establishment?}','DialysisPatientController@covid')->name('dialysis.covid');
-        Route::get('/dialysis/{establishment?}','DialysisPatientController@index')->name('dialysis.index');
-        Route::post('/dialysis','DialysisPatientController@store')->name('dialysis.store');
+        Route::get('/dialysis/covid/{establishment?}','DialysisPatientController@covid')->name('dialysis.covid')->middleware('auth');
+        Route::get('/dialysis/{establishment?}','DialysisPatientController@index')->name('dialysis.index')->middleware('auth');
+        Route::post('/dialysis','DialysisPatientController@store')->name('dialysis.store')->middleware('auth');
 
 
 
@@ -214,6 +216,7 @@ Route::prefix('lab')->name('lab.')->group(function () {
         //Route::get('/create','SuspectCaseController@create')->name('create')->middleware('auth','can:SuspectCase: create');
         //Route::post('/','SuspectCaseController@store')->name('store')->middleware('auth','can:SuspectCase: create');
         Route::get('/admission','SuspectCaseController@admission')->name('admission')->middleware('auth','can:SuspectCase: admission');
+        Route::get('/search','SuspectCaseController@search')->name('search')->middleware('auth','can:SuspectCase: admission');
         Route::post('/admission','SuspectCaseController@storeAdmission')->name('store_admission')->middleware('auth','can:SuspectCase: admission');
         Route::get('/{suspect_case}/edit','SuspectCaseController@edit')->name('edit')->middleware('auth','can:SuspectCase: edit');
         Route::put('/{suspect_case}','SuspectCaseController@update')->name('update')->middleware('auth','can:SuspectCase: edit');
@@ -222,6 +225,8 @@ Route::prefix('lab')->name('lab.')->group(function () {
         Route::get('/{suspect_case}/notificationForm','SuspectCaseController@notificationForm')->name('notificationForm')->middleware('auth','can:SuspectCase: admission');
         Route::get('/{suspect_case}/notificationFormSmall','SuspectCaseController@notificationFormSmall')->name('notificationFormSmall')->middleware('auth','can:SuspectCase: admission');
         Route::post('/notificationFormSmallBulk','SuspectCaseController@notificationFormSmallBulk')->name('notificationFormSmallBulk')->middleware('auth','can:SuspectCase: admission');
+        Route::get('/Hl7ResultMessageSuspectCaseAsignation/{hl7ResultMessage}/{suspectCase}','SuspectCaseController@Hl7ResultMessageSuspectCaseAsignation')->name('hl7Result_message_suspectCase_asignation')->middleware('auth');
+        Route::get('/Hl7ResultMessageDismiss/{hl7ResultMessage}','SuspectCaseController@Hl7ResultMessageDismiss')->name('Hl7Result_message_dismiss')->middleware('auth');
 
         Route::get('/index_import_results','SuspectCaseController@index_import_results')->name('index_import_results')->middleware('auth');
         Route::post('/results_import', 'SuspectCaseController@results_import')->name('results_import');
@@ -240,7 +245,7 @@ Route::prefix('lab')->name('lab.')->group(function () {
             Route::get('/minsal/{laboratory}','SuspectCaseReportController@report_minsal')->name('minsal')->middleware('auth');
             Route::get('/reception_report/{laboratory}','SuspectCaseReportController@reception_report')->name('reception_report')->middleware('auth');
             // Route::get('/minsal_ws','SuspectCaseReportController@report_minsal_ws')->name('minsal_ws')->middleware('auth');
-            Route::match(['get','post'],'/minsal_ws','SuspectCaseReportController@report_minsal_ws')->name('minsal_ws');
+            Route::match(['get','post'],'/minsal_ws','SuspectCaseReportController@report_minsal_ws')->name('minsal_ws')->middleware('auth');
             Route::get('/seremi/{laboratory}','SuspectCaseReportController@report_seremi')->name('seremi')->middleware('auth');
             Route::get('/positivesByDateRange','SuspectCaseReportController@positivesByDateRange')->name('positivesByDateRange')->middleware('auth');
             Route::get('/positives_own','SuspectCaseReportController@positivesOwn')->name('positives_own')->middleware('auth');
@@ -257,7 +262,9 @@ Route::prefix('lab')->name('lab.')->group(function () {
             Route::get('/cases_by_ids_index','SuspectCaseReportController@casesByIdsIndex')->name('cases_by_ids_index')->middleware('auth');
             Route::post('/export_excel_by_cases_ids','SuspectCaseReportController@exportExcelByCasesIds')->name('export_excel_by_cases_ids')->middleware('auth');
             Route::get('/allrapidtests','SuspectCaseReportController@allRapidTests')->name('all_rapid_tests')->middleware('auth');
-
+            Route::get('/integrationhetgmonitorpendings','SuspectCaseReportController@integrationHetgMonitorPendings')->name('integration_hetg_monitor_pendings')->middleware('auth');
+            Route::get('/integrationhetgmonitorpendingsDetails/{hl7ResultMessage}','SuspectCaseReportController@integrationHetgMonitorPendingsDetails')->name('integration_hetg_monitor_pendings_details')->middleware('auth');
+            // Route::get('/Hl7ResultMessageSuspectCaseAsignation/{hl7ResultMessage}/{suspectCase}','SuspectCaseReportController@Hl7ResultMessageSuspectCaseAsignation')->name('hl7Result_message_suspectCase_asignation')->middleware('auth');
         });
         Route::prefix('report')->name('report.')->group(function () {
             Route::get('/','SuspectCaseReportController@positives')->name('index')->middleware('auth','can:Report: other');
@@ -296,13 +303,15 @@ Route::prefix('lab')->name('lab.')->group(function () {
         Route::get('/{inmunoTest}/edit', 'InmunoTestController@edit')->name('edit')->middleware('auth');
         Route::post('/{store}', 'InmunoTestController@store')->name('store')->middleware('auth');
         Route::put('/update/{inmunoTest}', 'InmunoTestController@update')->name('update')->middleware('auth');
+        Route::delete('/{inmunoTest}', 'InmunoTestController@destroy')->name('destroy')->middleware('auth');
     });
 
-    Route::prefix('rapid_tests')->name('rapid_tests.')->group(function () {
+    Route::prefix('rapid_tests')->name('rapid_tests.')->middleware('auth')->group(function () {
         //Route::get('/', 'InmunoTestController@index')->name('index')->middleware('auth');
         //Route::get('/create/{search}', 'InmunoTestController@create')->name('create')->middleware('auth');
-        Route::get('/{inmunoTest}/edit', 'InmunoTestController@edit')->name('edit')->middleware('auth');
-        Route::post('/{store}', 'RapidTestController@store')->name('store')->middleware('auth');
+        Route::get('/{inmunoTest}/edit', 'InmunoTestController@edit')->name('edit');
+        Route::post('/{store}', 'RapidTestController@store')->name('store');
+        Route::delete('/{rapidTest}', 'RapidTestController@destroy')->name('destroy');
         //Route::put('/update/{inmunoTest}', 'InmunoTestController@update')->name('update')->middleware('auth');
     });
 
@@ -314,6 +323,9 @@ Route::prefix('lab')->name('lab.')->group(function () {
     Route::prefix('bulk_load_from_pntm')->name('bulk_load_from_pntm.')->group(function () {
         Route::get('/','SuspectCaseController@index_bulk_load_from_pntm')->name('index')->middleware('auth');
         Route::post('/import','SuspectCaseController@bulk_load_import_from_pntm')->name('import.excel')->middleware('auth');
+
+        Route::get('/no-creation','SuspectCaseController@index_bulk_load_from_pntm_no_creation')->name('index.no.creation')->middleware('auth');
+        Route::post('/import-no-creation','SuspectCaseController@bulk_load_import_from_pntm_no_creation')->name('import.excel.no.creation')->middleware('auth');
         Route::post('/importpassport','SuspectCaseController@bulk_load_import_from_pntm_passport')->name('import.excel.passport')->middleware('auth');
     });
 
@@ -464,6 +476,19 @@ Route::prefix('sanitary_residences')->name('sanitary_residences.')->middleware('
 
 });
 
+Route::prefix('sequencing')->name('sequencing.')->middleware('auth')->group(function () {
+    Route::get('/', 'SequencingCriteriaController@index')->name('index');
+    Route::get('/indexsend', 'SequencingCriteriaController@indexsend')->name('indexsend');
+    Route::get('/create/{suspect_case}','SequencingCriteriaController@create')->name('create');
+    Route::get('/{sequencingCriteria}/edit','SequencingCriteriaController@edit')->name('edit');
+    Route::put('/{sequencingCriteria}', 'SequencingCriteriaController@update')->name('update');
+    Route::put('/{sequencingCriteria}/send', 'SequencingCriteriaController@send')->name('send');
+    Route::delete('/{sequencingCriteria}', 'SequencingCriteriaController@destroy')->name('destroy');
+
+
+});
+
+
 Route::prefix('pending_patient')->name('pending_patient.')->middleware('auth')->group(function () {
    Route::get('/create', 'PendingPatientController@create')->name('create');
    Route::post('/store', 'PendingPatientController@store')->name('store');
@@ -474,3 +499,7 @@ Route::prefix('pending_patient')->name('pending_patient.')->middleware('auth')->
    Route::get('/export_excel_by_status/{selectedStatus}','PendingPatientController@exportExcelByStatus')->name('export_excel_by_status')->middleware('auth');
 
 });
+
+
+Route::get('/email_queue_test', 'SuspectCaseController@emailQueueTest');
+Route::get('/email_test', 'SuspectCaseController@emailTest');

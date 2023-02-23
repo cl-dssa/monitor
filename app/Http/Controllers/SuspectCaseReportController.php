@@ -26,10 +26,16 @@ use App\Region;
 use App\WSMinsal;
 use App\Commune;
 use App\Country;
+use App\Hl7ResultMessage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use App\Hl7ErrorMessage;
 
 use App\User;
+use PDO;
 
 class SuspectCaseReportController extends Controller
 {
@@ -788,7 +794,7 @@ class SuspectCaseReportController extends Controller
     /*****************************************************/
     public function report_minsal_ws(Request $request)
     {
-        $from = '2021-03-04 00:00'; //date("Y-m-d 21:00:00", time() - 60 * 60 * 24);
+        $from = '2021-09-20 00:00'; //date("Y-m-d 21:00:00", time() - 60 * 60 * 24); cambiar también en from de ws_minsal()
         $to = date("Y-m-d 20:59:59");
 
         $laboratory_id = 1;
@@ -821,7 +827,7 @@ class SuspectCaseReportController extends Controller
     {
 
         // dd($request);
-        $from = '2021-03-04 00:00'; //date("Y-m-d 21:00:00", time() - 60 * 60 * 24);
+        $from = '2021-09-20 00:00'; //date("Y-m-d 21:00:00", time() - 60 * 60 * 24);
         $to = date("Y-m-d 20:59:59");
 
         $laboratory_id = 1;
@@ -893,19 +899,29 @@ class SuspectCaseReportController extends Controller
     {
         set_time_limit(3600);
 
-        $from = '2020-10-30 08:35:23'; //date("Y-m-d 21:00:00", time() - 60 * 60 * 24);
+        $from = '2022-01-20 14:15:00'; //date("Y-m-d 21:00:00", time() - 60 * 60 * 24);
         $errors = '';
 
-        $case = SuspectCase::find('114122');
+        // $case = SuspectCase::find('114122');
+        // dump($case);
 
-        dump($case);
+        $casosCreados = SuspectCase::whereNull('minsal_ws_id')
+            ->whereNull('external_laboratory')
+            //->whereNull('reception_at')
+            ->where('created_at', '>=', $from)
+            ->whereHas('laboratory', function ($q){
+              $q->where('minsal_ws', 1);
+            })
+            ->get();
 
-//        foreach ($casosCreados as $case){
+        // dd($casosCreados);
+
+       foreach ($casosCreados as $case){
             $response = WSMinsal::crea_muestra_v2($case);
             if ($response['status'] == 0) {
                 $errors = $errors . "case: " .$case->id . " " . $response['msg'] . "<br>";
             }
-//        }
+       }
 
         if($errors){
             session()->flash('info', $errors);
@@ -926,7 +942,7 @@ class SuspectCaseReportController extends Controller
     {
         set_time_limit(3600);
 
-        $from = '2020-11-10 20:05:17'; //date("Y-m-d 21:00:00", time() - 60 * 60 * 24);
+        $from = '2022-01-20 14:15:00'; //date("Y-m-d 21:00:00", time() - 60 * 60 * 24);
         $errors = '';
 
         $casosRecepcionados = SuspectCase::whereNotNull('minsal_ws_id')
@@ -968,8 +984,8 @@ class SuspectCaseReportController extends Controller
     {
         set_time_limit(3600);
 
-        $from = '2020-11-10 23:30:00';
-        $to = '2020-11-11 17:02:53';
+        $from = '2022-01-20 14:15:00';
+        $to = '2022-01-21 09:30:00';
         $errors = '';
 
         $casosConResultado = SuspectCase::whereNotNull('minsal_ws_id')
@@ -1052,58 +1068,7 @@ class SuspectCaseReportController extends Controller
         return $patients->count();
     }
 
-    /**
-     * En desarrollo. Web service que obtiene data de archivos HL7 enviados por herramienta de integración
-     * Mirth Connect.
-     * @param Request $request
-     */
-    public function getHl7Files(Request $request)
-    {
-        $patientId = $request->input('patient_id');
-        $patientNames = $request->input('patient_names');
-        $patientFamilyFather = $request->input('patient_family_father');
-        $patientFamilyMother = $request->input('patient_family_mother');
-        $pcrSarsCov2At = Carbon::parse($request->input('observation_datetime'));
-        $pcrSarsCov2 = $request->input('observation_value');
-        //        $sampleAt = Carbon::parse($request->input('sample_observation_datetime'));
-        $sampleAt = Carbon::parse($request->input('message_datetime'));
-        error_log('---------------WEBSERVICE: HL7 FILES TEST----------------');
-        error_log('patientId: ' . $patientId);
-        error_log('patientNames: ' . $patientNames);
-        error_log('patientFamilyFather: ' . $patientFamilyFather);
-        error_log('patientFamilyMother: ' . $patientFamilyMother);
-        error_log('pcrSarsCov2At: ' . $pcrSarsCov2At);
-        error_log('pcrSarsCov2: ' . $pcrSarsCov2);
-        error_log('sampleAt: ' . $sampleAt->toDateString());
 
-        if (strtoupper($pcrSarsCov2) == "N") {
-            $pcrSarsCov2 = "negative";
-        }
-        if (strtoupper($pcrSarsCov2) == "P") {
-            $pcrSarsCov2 = "positive";
-        }
-        if (strtoupper($pcrSarsCov2) == "ENM") {
-            $pcrSarsCov2 = "rejected";
-        }
-        if (strtoupper($pcrSarsCov2) == "INDET") {
-            $pcrSarsCov2 = "undetermined";
-        }
-        //            if(strtoupper($pcrSarsCov2) == "PENDIENTE"){$pcrSarsCov2 = "pending";}
-
-        $suspectCase = SuspectCase::whereHas('patient', function ($q) use ($patientFamilyFather, $patientFamilyMother, $patientNames) {
-            $q->where('fathers_family', 'LIKE', '%' . $patientFamilyFather . '%')
-                ->where('mothers_family', 'like', '%' . $patientFamilyMother . '%')
-                ->where('name', 'like', '%' . $patientNames . '%');
-        })->whereDate('sample_at', $sampleAt->toDateString())
-            ->orderBy('updated_at', 'desc')->first();
-
-        if ($suspectCase != null) {
-            $suspectCase->pcr_sars_cov_2 = $pcrSarsCov2;
-            $suspectCase->pcr_sars_cov_2_at = $pcrSarsCov2At;
-            $suspectCase->save();
-            error_log($suspectCase);
-        }
-    }
 
     public function case_chart(Request $request)
     {
@@ -1507,7 +1472,8 @@ class SuspectCaseReportController extends Controller
      */
     public function casesWithBarcodes(Request $request){
         $selectedEstablishment = $request->input('establishment_id');
-        $selectedSampleAt = $request->input('sample_at');
+        $selectedSampleAt = $request->input('sample_at_from');
+        $selectedSampleTo = $request->input('sample_at_to');
         $selectedCaseType = $request->input('case_type');
 
         $suspectCases = null;
@@ -1518,9 +1484,9 @@ class SuspectCaseReportController extends Controller
                         $q->where('establishment_id', $selectedEstablishment);
                     }
                 })
-                ->where(function ($q) use ($selectedSampleAt) {
+                ->where(function ($q) use ($selectedSampleAt, $selectedSampleTo) {
                     if ($selectedSampleAt) {
-                        $q->whereDate('sample_at', $selectedSampleAt);
+                        $q->where('sample_at','>=', $selectedSampleAt)->where('sample_at','<=', $selectedSampleTo);
                     }
                 })
                 ->where(function($q) use ($selectedCaseType){
@@ -1533,12 +1499,13 @@ class SuspectCaseReportController extends Controller
                 ->where('pcr_sars_cov_2', 'pending')
                 ->latest()
                 ->get();
+                //dd($suspectCases);
         }
 
         $env_communes = array_map('trim',explode(",",env('COMUNAS')));
         $establishments = Establishment::whereIn('commune_id',$env_communes)->orderBy('name','ASC')->get();
 
-        return view('lab.suspect_cases.reports.cases_with_barcodes', compact('suspectCases', 'establishments', 'selectedEstablishment', 'selectedSampleAt', 'selectedCaseType'));
+        return view('lab.suspect_cases.reports.cases_with_barcodes', compact('suspectCases', 'establishments', 'selectedEstablishment', 'selectedSampleAt','selectedSampleTo', 'selectedCaseType'));
 
     }
 
@@ -1665,6 +1632,135 @@ class SuspectCaseReportController extends Controller
         return view('lab.suspect_cases.reports.all_rapid_tests', compact('rapidtests'));
     }
 
+    public function integrationHetgMonitorPendings(Request $request)
+    {
+      $status = null;
+      if ($request->status) {
+        $status = $request->status;
+      }else{
+        $status = "case_not_found";
+      }
 
+      // dd($status);
+
+      $hl7ResultMessages = Hl7ResultMessage::whereNotNull('status')
+                                            ->when($status != null, function ($q) use ($status) {
+                                                return $q->where('status',$status)
+                                                ->where('created_at', '>', '2022-03-01 00:00:00');
+                                            })
+                                            ->when($status != "assigned_to_case" && $status != "monitor_error", function ($q) use ($status) {
+                                                return $q->whereNotNull('pdf_file');
+                                            })
+                                            // ->whereNotNull('pdf_file')
+                                            ->orderBy('observation_datetime','DESC')
+                                            ->get();
+
+      return view('lab.suspect_cases.reports.integration_hetg_monitor_pendings',compact('hl7ResultMessages','request'));
+    }
+
+    public function integrationHetgMonitorPendingsDetails(Hl7ResultMessage $hl7ResultMessage, Request $request)
+    {
+
+      $suspectCases = null;
+      $cases = null;
+      if ($request->text != null && $hl7ResultMessage->status == "case_not_found") {
+        $collection = collect(['positivos', 'negativos', 'pendientes', 'rechazados', 'indeterminados']);
+        $filtro = collect([]);
+        $collection->each(function ($item, $key) use ($request, $filtro){
+                    switch ($item) {
+                case "positivos":
+                    $request->get('positivos')=="on"?$filtro->push('positive'):true;
+                    break;
+                case "negativos":
+                    $request->get('negativos')=="on"?$filtro->push('negative'):true;
+                    break;
+                case "pendientes":
+                    $request->get('pendientes')=="on"?$filtro->push('pending'):true;
+                    break;
+                case "rechazados":
+                    $request->get('rechazados')=="on"?$filtro->push('rejected'):true;
+                    break;
+                case "indeterminados":
+                    $request->get('indeterminados')=="on"?$filtro->push('undetermined'):true;
+                    break;
+            }
+        });
+
+        $patients = Patient::getPatientsBySearch($request->get('text'));
+
+         DB::connection()->getPdo()->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
+         $suspectCases = SuspectCase::getCaseByPatient($patients)
+                             ->latest('id')
+                             ->where('laboratory_id',1) //solo laboratorio hospital
+                             ->whereIn('pcr_sars_cov_2',$filtro)
+                             ->whereNotNull('reception_at')
+                             ->paginate(200);
+         DB::connection()->getPdo()->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
+      }
+      // dd($suspectCases);
+
+      return view('lab.suspect_cases.reports.integration_hetg_monitor_pendings_details',compact('hl7ResultMessage','request','suspectCases'));
+    }
+
+    // public function Hl7ResultMessageSuspectCaseAsignation(Hl7ResultMessage $hl7ResultMessage, SuspectCase $suspectCase, Request $request)
+    // {
+    //   // if ($hl7ResultMessage->observation_value == "Negativo") {
+    //   //     $pcrSarsCov2 = "negative";
+    //   // }
+    //   // if ($hl7ResultMessage->observation_value == "Positivo") {
+    //   //     $pcrSarsCov2 = "positive";
+    //   // }
+    //   // if ($hl7ResultMessage->observation_value == "Rechazado") {
+    //   //     $pcrSarsCov2 = "rejected";
+    //   // }
+    //   // if ($hl7ResultMessage->observation_value == "Indeterminado") {
+    //   //     $pcrSarsCov2 = "undetermined";
+    //   // }
+    //   //
+    //   // $sucesfulStore = Storage::put('suspect_cases/' . $suspectCase->id . '.pdf' , $hl7ResultMessage->pdf_file);
+    //   //
+    //   // if ($sucesfulStore) {
+    //   //   $suspectCase->pcr_sars_cov_2_at = $hl7ResultMessage->observation_datetime;
+    //   //   $suspectCase->pcr_sars_cov_2 = $pcrSarsCov2;
+    //   //   $suspectCase->hl7_result_message_id = $hl7ResultMessage->id;
+    //   //   $suspectCase->file = 1;
+    //   //   $suspectCase->save();
+    //   //
+    //   //   foreach ($hl7ResultMessage->suspectCases as $key => $suspectCase_item) {
+    //   //     if ($suspectCase_item->id != $suspectCase->id) {
+    //   //       $suspectCase_item->hl7_result_message_id = null;
+    //   //       $suspectCase_item->save();
+    //   //     }
+    //   //   }
+    //   //
+    //   //   $hl7ResultMessage->status = "assigned_to_case";
+    //   //   $hl7ResultMessage->pdf_file = null;
+    //   //   $hl7ResultMessage->save();
+    //   //
+    //   //   //se intenta subir a PNTM
+    //   //   $this->addSuspectCaseResult($suspectCase, $hl7ResultMessage);
+    //   //
+    //   //   session()->flash('success', 'Se asignó muestra ' . $suspectCase->id . " a caso pendiente " . $hl7ResultMessage->id);
+    //   //   return redirect()->route('lab.suspect_cases.reports.integration_hetg_monitor_pendings');
+    //   //
+    //   // }else{
+    //   //   session()->flash('error', "Error al obtener archivo pdf");
+    //   //   return redirect()->route('lab.suspect_cases.reports.integration_hetg_monitor_pendings');
+    //   // }
+    //
+    //   if ($this->addSuspectCaseResult($suspectCase, $hl7ResultMessage)) {
+    //       $hl7ResultMessage->status = "assigned_to_case";
+    //       $hl7ResultMessage->pdf_file = null;
+    //       $hl7ResultMessage->save();
+    //
+    //       session()->flash('success', 'Se asignó muestra ' . $suspectCase->id . " a caso pendiente " . $hl7ResultMessage->id);
+    //       return redirect()->route('lab.suspect_cases.reports.integration_hetg_monitor_pendings');
+    //   }else{
+    //     session()->flash('error', "Error--");
+    //     return redirect()->route('lab.suspect_cases.reports.integration_hetg_monitor_pendings');
+    //   }
+    //
+    //
+    // }
 
 }

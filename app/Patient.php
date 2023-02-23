@@ -91,7 +91,7 @@ class Patient extends Model implements Auditable //Authenticatable
     }
 
     public function demographic() {
-        return $this->hasOne('App\Demographic');
+        return $this->hasOne('App\Demographic')->withDefault();
     }
 
     public function bookings() {
@@ -159,6 +159,20 @@ class Patient extends Model implements Auditable //Authenticatable
         }
     }
 
+    function getSexCodeAttribute()
+    {
+        switch ($this->gender) {
+            case 'male':
+                return '01'; break;
+            case 'female':
+                return '02'; break;
+            case 'other':
+                return '03'; break;
+            case 'unknown':
+                return '99'; break;
+        }
+    }
+
     function getGenderEspAttribute(){
         switch($this->gender) {
             case 'male': return 'Hombre'; break;
@@ -207,25 +221,23 @@ class Patient extends Model implements Auditable //Authenticatable
 
     /**
      * Retorna pacientes según contenido en $searchText
-     * Busqueda realizada en: nombres, apellidos, rut.
-     * @return Patient[]|Builder[]|Collection
+     * Búsqueda realizada en: nombres, apellidos, rut.
+     * @return Builder
      */
-    public static function getPatientsBySearch($searchText){
-                  $patients = Patient::query();
-                  $array_search = explode(' ', $searchText);
-                  foreach($array_search as $word){
-                  $patients->where(function($q) use($word){
-                            $q->where('name', 'LIKE', '%'.$word.'%')
-                            ->orwhere('fathers_family','LIKE', '%'.$word.'%')
-                            ->orwhere('mothers_family','LIKE', '%'.$word.'%')
-                            ->orwhere('run','LIKE', '%'.$word.'%')
-                            ->orwhere('other_identification','LIKE', '%'.$word.'%');
-                      });
-                  }//End foreach
-              return $patients;
-        }// End getPatientsBySearch
-
-
-
+    public static function getPatientsBySearch($searchText)
+    {
+        $patients = Patient::query();
+        $array_search = explode(' ', $searchText);
+        foreach ($array_search as $word) {
+            $patients->where(function ($q) use ($word) {
+                $q->where('name', 'LIKE', '%' . $word . '%')
+                    ->orwhere('fathers_family', 'LIKE', '%' . $word . '%')
+                    ->orwhere('mothers_family', 'LIKE', '%' . $word . '%')
+                    ->orwhere('run', 'LIKE', '%' . $word . '%')
+                    ->orwhere('other_identification', 'LIKE', '%' . $word . '%');
+            });
+        }
+        return $patients;
+    }
 
 }

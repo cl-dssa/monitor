@@ -39,7 +39,8 @@ class SuspectCase extends Model implements Auditable
         'discharged_at',
         'observation', 'minsal_ws_id','case_type', 'positive_condition',
         'patient_id', 'laboratory_id', 'establishment_id',
-        'user_id'
+        'user_id',
+        'ct', 'candidate_for_sq', 'hl7_result_message_id', 'filename_gcs'
     ];
 
     public function patient() {
@@ -64,6 +65,23 @@ class SuspectCase extends Model implements Auditable
 
     public function user() {
         return $this->belongsTo('App\User');
+    }
+
+    public function hl7ResultMessage() {
+        return $this->belongsTo('App\Hl7ResultMessage');
+    }
+
+    public function wsHetgRequests()
+    {
+        return $this->hasMany('App\WsHetgRequest');
+    }
+
+    public function hasSuccessfulWsHetgRequests()
+    {
+        return $this->wsHetgRequests()
+            ->where('type', WsHetgRequest::TYPE_REQUEST)
+            ->whereIn('status', ['201', '200'])
+            ->count() > 0;
     }
 
     function getCovid19Attribute(){
@@ -152,20 +170,12 @@ class SuspectCase extends Model implements Auditable
      */
     public function scopePatientTextFilter($query, $searchText)
     {
-
-//        $query->whereHas('patient', function ($q) use ($searchText) {
-//            $q->Where(DB::raw('CONCAT(name, " ", fathers_family , " ", mothers_family)'), 'LIKE', '%' . $searchText . '%' )
-//                ->orWhere('run', 'LIKE', '%' . $searchText . '%');
-//
-//        });
-
         $query->whereHas('patient', function($q) use ($searchText){
             $q->Where('name', 'LIKE', '%'.$searchText.'%')
                 ->orWhere('fathers_family','LIKE','%'.$searchText.'%')
                 ->orWhere('mothers_family','LIKE','%'.$searchText.'%')
                 ->orWhere('run','LIKE','%'.$searchText.'%');
         });
-
     }
 
 
@@ -177,12 +187,8 @@ class SuspectCase extends Model implements Auditable
     public static function getCaseByPatientLaboratory($patients, $laboratory_id){
           $patients_id = $patients->pluck('id');
           $suspectCases = SuspectCase::latest('id')
-//              ->where(function ($query) use ($laboratory_id){
-//                  $query->where('laboratory_id', $laboratory_id)
-//                      ->orWhereNull('laboratory_id');
-//              })
               ->where('laboratory_id',$laboratory_id)
-              ->whereIn('patient_id', $patients_id);
+              ->whereIntegerInRaw('patient_id', $patients_id);
           return $suspectCases;
         }// End getSuspectCasesByPatients
 
@@ -194,7 +200,7 @@ class SuspectCase extends Model implements Auditable
         public static function getCaseByPatient($patients){
               $patients_id = $patients->pluck('id');
               $suspectCases = SuspectCase::latest('id')
-                  ->whereIn('patient_id', $patients_id);
+                  ->whereIntegerInRaw('patient_id', $patients_id);
               return $suspectCases;
             }// End getSuspectCasesByPatients
 

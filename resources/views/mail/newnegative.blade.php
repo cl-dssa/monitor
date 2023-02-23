@@ -20,10 +20,13 @@
                     <br>
 
                     @if($suspectCase->Covid19 == 'Positivo')
-                        <p><strong>Deberá cumplir una cuarentena por 11 días. </strong>
-                            Sin perjuicio de lo anterior, dicho tiempo puede
+                        <p>
+                            <!-- <strong>Deberá cumplir una cuarentena por 11 días. </strong> -->
+                            La duración de la licencia médica es definida por la autoridad sanitaria
+                            <!-- Sin perjuicio de lo anterior, dicho tiempo puede
                             extenderse si no se ha recuperado totalmente de la
-                            enfermedad.</p>
+                            enfermedad. -->
+                        </p>
                         <br>
 
                         <p>Se le realizará seguimiento telefónico diario por parte
@@ -69,7 +72,7 @@
             <p class="texto">
                 <span class="linea_firma" style="color: #EE3A43">——</span><span class="linea_firma" style="color: #0168B3">———</span><br>
                 <br><br>
-                Correo generado automáticamente a través del {{env('APP_NAME')}}
+                No responder. Correo generado automáticamente a través del {{env('APP_NAME')}}.
             </p>
 
         </div>

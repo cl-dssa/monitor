@@ -29,10 +29,12 @@
     @method('POST')
     <div class="form-row">
 
+        <input type="hidden" name="id_laboratory" id="for_id_laboratory" value="{{Auth::user()->laboratory->id_openagora}}">
+
         <fieldset class="form-group col-8 col-md-2">
             <label for="for_run">Run SIN DIGITO VERIF.</label>
             <input type="hidden" class="form-control" id="for_id" name="id" value="{{old('id')}}">
-            <input type="number" max="50000000" class="form-control" id="for_run" name="run" value="{{old('run')}}">
+            <input type="number" max="80000000" class="form-control" id="for_run" name="run" value="{{old('run')}}">
         </fieldset>
 
         <fieldset class="form-group col-4 col-md-1">
@@ -146,6 +148,7 @@
             </select>
         </fieldset>
 
+        
         <fieldset class="form-group col-12 col-md-3">
             <label for="for_origin">Estab. Detalle (Opcional)</label>
             <select name="origin" id="for_origin" class="form-control">
@@ -155,6 +158,7 @@
                 @endforeach
             </select>
         </fieldset>
+        
 
     </div>
 
@@ -299,8 +303,10 @@
             </select>
     </fieldset>
 
-
-
+    <fieldset class="form-group col-md-3">
+                  <label for="for_epivigila">Epivigila:</label>
+                  <input type="number" class="form-control" name="epivigila">
+                </fieldset>
     </div>
 
     <button type="submit" class="btn btn-primary">Guardar</button>

@@ -7,6 +7,7 @@ use App\Laboratory;
 use App\Establishment;
 use App\EstablishmentUser;
 use App\Dialysis\DialysisCenter;
+use App\LogSession;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
@@ -81,6 +82,7 @@ class UserController extends Controller
         $user->telephone = $request->input('telephone');
         $user->function = $request->input('function');
         $user->laboratory_id = $request->input('laboratory_id');
+        $user->establishment_id = $request->input('my_establishment_id');
         //$user->dialysis_center_id = $request->input('dialysis_center_id');
         //$user->password = bcrypt($request->input('password'));
         if($request->input('password')) {
@@ -113,34 +115,34 @@ class UserController extends Controller
 
         session()->flash('success', 'Estimado Usuari@
 
- 
+
 
         Mediante el presente correo se hace entrega de su clave para el monitor Esmeralda. El link para ingresar es el siguiente
-        
-         
-        
+
+
+
         https://i.saludiquique.cl/monitor/
-        
-         
-        
+
+
+
         en correo deberá digitar al correo que le está llegando este mail y su  contraseña temporal será
-        
-         
-        
+
+
+
         '.$password.'
-        
-         
-        
+
+
+
         Se recomienda cambiar la contraseña a una que sea más fácil de recordar, para eso podrá apretar en la esquina superior derecha en el sistema en la opción" cambiar clave. Y seguir los pasos correspondientes
-        
-         
-        
-         
-        
+
+
+
+
+
         Se despide atentamente
-        
-         
-        
+
+
+
         Atte.');
 
         return redirect()->route('users.index');
@@ -197,6 +199,7 @@ class UserController extends Controller
         $user->name = $request->input('name');
         $user->email = $request->input('email');
         $user->laboratory_id = $request->input('laboratory_id');
+        $user->establishment_id = $request->input('my_establishment_id');
         //$user->dialysis_center_id = $request->input('dialysis_center_id');
         $user->telephone = $request->input('telephone');
         $user->function = $request->input('function');
@@ -315,5 +318,37 @@ class UserController extends Controller
 
         session()->flash('info', 'Password: '. $password);
         return redirect()->back();
+    }
+
+    /**
+     * Last access
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function lastAccess()
+    {
+        $logSessions = LogSession::query()
+            ->latest()
+            ->paginate(100);
+
+        return view('users.last-access', compact('logSessions'));
+    }
+
+    /**
+     * Update the active field of the user
+     *
+     * @param \App\User  $user
+     * @return \Illuminate\Http\Response
+     */
+    public function updateActive(User $user)
+    {
+        $user->update([
+            'active' => !$user->active
+        ]);
+
+        $msg = $user->active ? 'activado' : 'desactivado';
+
+        session()->flash('success', "El usuario $user->name fue $msg.");
+        return redirect()->route('users.edit', $user);
     }
 }

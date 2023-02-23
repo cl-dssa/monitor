@@ -151,6 +151,7 @@
             <th class="alert-danger">PCR SARS-Cov2</th>
             <th>Observación</th>
             <th>Epivigila</th>
+            <th>WS Minsal</th>
             <th>Impr.</th>
             <th>Selec.</th>
         </tr>
@@ -167,6 +168,24 @@
                             @method('POST')
                             <button type="submit" class="btn btn-sm btn-primary" title="Recepcionar"><i class="fas fa-inbox"></i></button>
                         </form>
+
+                        @can('Developer')
+                            @if(Auth::user()->laboratory->id === 1 && $case->patient->run != null)
+
+
+                                <form method="POST" class="form-inline" action="{{ route('lab.suspect_cases.send_to_yani', $case) }}">
+                                    @csrf
+                                    @method('POST')
+                                    <button
+                                        type="submit"
+                                        class="btn btn-sm btn-outline-{{$case->hasSuccessfulWsHetgRequests() ? 'success' : 'primary'}} mt-1"
+                                        title="{{$case->hasSuccessfulWsHetgRequests() ? 'Enviado' : 'Enviar'}} a YANI">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </form
+
+                            @endif
+                        @endcan
                     @endcan
                 @endif
             </td>
@@ -189,6 +208,7 @@
             <td>{{ $case->covid19 }}</td>
             <td class="text-muted small">{{ $case->observation }}</td>
             <td>{{ $case->epivigila }}</td>
+            <td>{{ $case->minsal_ws_id }}</td>
             <td > <a href= '{{route('lab.suspect_cases.notificationFormSmall',$case) }}' class="btn btn-sm btn-outline-primary" href="#"><i class="fas fa-print"></i></a> </td>
             <td style="text-align:center;"><label for="chk_derivacion">{{($case->external_laboratory) ? 'externo' : '' }}</label><input type="checkbox" {{($case->external_laboratory) ? 'visibility: hidden' : '' }} name="casos_seleccionados[]" id="chk_derivacion" class="select_checkboxs" value={{$case->id}} /> </td>
         </tr>

@@ -20,7 +20,35 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'run', 'dv', 'name', 'email', 'password','telephone', 'function','laboratory_id', 'establishment_id'
+        'run',
+        'dv',
+        'name',
+        'email',
+        'password',
+        'telephone',
+        'function',
+        'active',
+        'laboratory_id',
+        'establishment_id',
+    ];
+
+    /**
+     * The attributes that should be hidden for arrays.
+     *
+     * @var array
+     */
+    protected $hidden = [
+        'password',
+        'remember_token',
+    ];
+
+    /**
+     * The attributes that should be cast to native types.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'email_verified_at' => 'datetime',
     ];
 
     public function logs() {
@@ -44,6 +72,13 @@ class User extends Authenticatable
 
     /**
     * The establishment that belong to the user.
+    */
+    public function establishment() {
+        return $this->belongsTo('App\Establishment');
+    }
+    
+    /**
+    * The establishments where has access the user.
     */
     public function establishments() {
         return $this->belongsToMany('App\Establishment');
@@ -70,22 +105,11 @@ class User extends Authenticatable
       return $this->hasMany('\App\BulkLoadRecord');
     }
 
-    /**
-     * The attributes that should be hidden for arrays.
-     *
-     * @var array
-     */
-    protected $hidden = [
-        'password', 'remember_token'
-    ];
+    public function logSessions() {
+        return $this->hasMany('App\LogSession');
+    }
 
-    /**
-     * The attributes that should be cast to native types.
-     *
-     * @var array
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
-
+    public function getLastSessionsAttribute() {
+        return $this->hasMany('App\LogSession')->limit(30)->orderByDesc('created_at')->get();
+    }
 }

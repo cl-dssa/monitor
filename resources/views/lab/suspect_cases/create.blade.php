@@ -12,7 +12,7 @@
         <fieldset class="form-group col-10 col-md-2">
             <label for="for_run">Run</label>
             <input type="hidden" class="form-control" id="for_id" name="id">
-            <input type="number" max="50000000" class="form-control" id="for_run" name="run">
+            <input type="number" max="80000000" class="form-control" id="for_run" name="run">
         </fieldset>
 
         <fieldset class="form-group col-2 col-md-1">
@@ -97,6 +97,7 @@
             </select>
         </fieldset>
 
+        
         <fieldset class="form-group col-6 col-md-3">
             <label for="for_origin">Estab. Detalle (Opcional)</label>
             <select name="origin" id="for_origin" class="form-control">
@@ -106,6 +107,7 @@
                 @endforeach
             </select>
         </fieldset>
+        
 
         <fieldset class="form-group col-4 col-md-1">
             <label for="for_age">Edad</label>
